@@ -85,6 +85,12 @@
   details.guide summary{font-weight:700;color:#143642;cursor:pointer;font-size:15px}
   details.guide li{margin:4px 0}
   .copied{color:#128c4b;font-weight:600;font-size:13px}
+  .modal.wide{max-width:94vw}
+  .diag-scroll{overflow:auto;max-height:78vh;background:#fff;border:1px solid #e5ddcf;border-radius:8px}
+  .diag-scroll svg{display:block}
+  .diag-scroll rect.box{cursor:pointer}
+  .diag-scroll rect.box:hover{filter:brightness(.93)}
+  .diag-bar{display:flex;gap:10px;align-items:center;margin:8px 0}
 </style>
 </head>
 <body>
@@ -314,6 +320,90 @@ function renderDir(){
   document.getElementById('directory').innerHTML=html;
 }
 
+// --- descendants SVG diagram ---
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function descCount(id){let n=0;(childrenOf[id]||[]).forEach(c=>{n+=1+descCount(c.id);});return n;}
+function showDesc(id){
+  const rootP=byId[id];if(!rootP)return;
+  const total=descCount(id);
+  const box=document.getElementById('modalBox');
+  document.getElementById('modalBg').classList.add('open');
+  box.classList.add('wide');
+  if(!total){
+    box.innerHTML=`<h3>🌳 Sơ đồ con cháu — ${esc(rootP.name)}</h3><p>Người này chưa ghi con cháu trong dữ liệu.</p><div class="actions"><button class="btn ghost" onclick="closeModal()">Đóng</button></div>`;
+    return;
+  }
+  // build tree
+  let maxDepth=0;
+  function walk(pid,depth){
+    const p=byId[pid];maxDepth=Math.max(maxDepth,depth);
+    const lines=[p.name+(p.years?"  "+p.years:"")];
+    spousesOf(p).forEach(s=>lines.push("⚭ "+s.name+(s.years?" "+s.years:"")));
+    const kids=(childrenOf[pid]||[]).map(k=>walk(k.id,depth+1));
+    return {id:p.id,name:p.name,g:p.g,lines,depth,kids};
+  }
+  const root=walk(id,0);
+  // layout: left-to-right
+  const BW=210,LH=14,PADH=4,HGAP=70,VGAP=8;
+  const nodeH=n=>n.lines.length*LH+2*PADH;
+  function measure(n){
+    const kidsH=n.kids.reduce((a,k)=>a+measure(k),0)+VGAP*Math.max(0,n.kids.length-1);
+    n.h=Math.max(nodeH(n),kidsH);
+    return n.h;
+  }
+  measure(root);
+  function place(n,top,depth){
+    n.x=20+depth*(BW+HGAP);
+    const nh=nodeH(n);
+    if(!n.kids.length){n.y=top+(n.h-nh)/2;}
+    else{
+      let cy=top;
+      n.kids.forEach(k=>{place(k,cy,depth+1);cy+=k.h+VGAP;});
+      const first=n.kids[0],last=n.kids[n.kids.length-1];
+      const mid=(first.y+nodeH(first)/2+(last.y+nodeH(last)/2))/2;
+      n.y=mid-nh/2;
+    }
+  }
+  place(root,10,0);
+  const W=20+(maxDepth+1)*(BW+HGAP)+10;
+  const H=root.h+20;
+  // collect nodes + edges
+  const all=[];(function collect(n){all.push(n);n.kids.forEach(collect);})(root);
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" font-family="Segoe UI,Arial,sans-serif">`;
+  // edges first (under boxes)
+  const busX=x=>x+BW+HGAP/2;
+  for(const n of all){
+    if(!n.kids.length)continue;
+    const px=n.x+BW, py=n.y+nodeH(n)/2, bx=busX(n.x);
+    const cys=n.kids.map(k=>k.y+nodeH(k)/2);
+    const lo=Math.min(py,...cys), hi=Math.max(py,...cys);
+    svg+=`<path d="M${px} ${py} H${bx} M${bx} ${lo} V${hi}" fill="none" stroke="#b8a988" stroke-width="1.5"/>`;
+    for(const k of n.kids){const cy=k.y+nodeH(k)/2;svg+=`<path d="M${bx} ${cy} H${k.x}" fill="none" stroke="#b8a988" stroke-width="1.5"/>`;}
+  }
+  for(const n of all){
+    const fill=n.g==='f'?'#fdeef0':'#e8f0fe';
+    const stroke=n.g==='f'?'#c96b7e':'#4a6fa5';
+    const isRoot=n.id===id;
+    svg+=`<g><rect class="box" data-pid="${n.id}" x="${n.x}" y="${n.y}" width="${BW}" height="${nodeH(n)}" rx="7" fill="${fill}" stroke="${isRoot?'#f2a71b':stroke}" stroke-width="${isRoot?3:1.3}"/>`;
+    n.lines.forEach((ln,i)=>{
+      const isSp=ln.startsWith('⚭');
+      svg+=`<text x="${n.x+8}" y="${n.y+PADH+LH*i+LH-4}" font-size="${isSp?10.5:12}" font-weight="${isSp?400:600}" fill="${isSp?'#666':(n.g==='f'?'#8c2f44':'#1d3f6e')}">${esc(ln)}</text>`;
+    });
+    svg+='</g>';
+  }
+  svg+='</svg>';
+  const gens=maxDepth+1;
+  box.innerHTML=`
+    <h3>🌳 Sơ đồ con cháu — ${esc(rootP.name)}${rootP.gen?` <span style="font-weight:400;font-size:14px;color:var(--muted)">(đời ${rootP.gen})</span>`:""}</h3>
+    <div class="diag-bar"><span class="stats">${total} con cháu · ${gens} đời · kéo ngang/dọc để xem</span>
+      <button class="btn ghost" style="margin-left:auto" onclick="closeModal()">Đóng</button></div>
+    <div class="diag-scroll">${svg}</div>`;
+  box.querySelectorAll('rect.box').forEach(r=>{
+    r.addEventListener('click',()=>{const pid=r.dataset.pid;closeModal();show(pid,true);});
+  });
+}
+window.showDesc=showDesc;
+
 // --- suggestion system ---
 const CONFIG={
   // Email nhận góp ý của gia đình — THAY ĐỔI EMAIL NÀY
@@ -360,7 +450,7 @@ function copySug(){
   );
 }
 let sugId=null;
-function closeModal(){document.getElementById('modalBg').classList.remove('open');}
+function closeModal(){document.getElementById('modalBg').classList.remove('open');document.getElementById('modalBox').classList.remove('wide');}
 window.suggest=suggest;window.sendSug=sendSug;window.copySug=copySug;window.closeModal=closeModal;
 
 // --- detail panel ---
@@ -400,7 +490,7 @@ function show(id,scroll){
     ${row("Vợ/Chồng",sp)}
     ${row("Con",ch)}
     ${p.note?`<div class="note">⚠️ ${p.note}</div>`:""}
-    <div class="row" style="margin-top:8px"><button class="suggest-btn" onclick="sugId='${p.id}';suggest('${p.id}')">✏️ Đề xuất sửa người này</button></div>
+    <div class="row" style="margin-top:8px"><button class="suggest-btn" onclick="showDesc('${p.id}')">🌳 Sơ đồ con cháu</button><button class="suggest-btn" onclick="sugId='${p.id}';suggest('${p.id}')">✏️ Đề xuất sửa người này</button></div>
     <div class="row" style="margin-top:8px"><span class="lbl">Liên kết:</span><input style="flex:1;font-size:12px" readonly value="${location.origin+location.pathname}#p=${p.id}" onclick="this.select()"></div>`;
   detailEl.classList.add("open");
   history.replaceState(null,"","#p="+id);
@@ -417,6 +507,8 @@ renderTree("");
 renderResults("");
 const initId=(location.hash.match(/p=([\w-]+)/)||[])[1];
 if(initId) show(initId,false);
+const diagId=(location.hash.match(/diag=([\w-]+)/)||[])[1];
+if(diagId) showDesc(diagId);
 </script>
 </body>
 </html>
