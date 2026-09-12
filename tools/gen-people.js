@@ -110,15 +110,19 @@ for(const[,dname,body]of diags){
     const p=persons[0];
     // --- parent ---
     const myRow=rowOf(u);
-    const nb=[...(touched[u.id]||[])].map(id=>unitOfId(id)).filter(x=>x&&x.id!==u.id&&rowOf(x)>=0&&rowOf(x)<myRow);
-    nb.sort((a,b)=>b.y-a.y);
+    const cx0=u.x+u.w/2;
+    const nb=[...(touched[u.id]||[])].map(id=>unitOfId(id)).filter(x=>x&&x.id!==u.id&&rowOf(x)>=0&&rowOf(x)<myRow&&rec[x.id]);
+    // prefer edge-connected candidate in the IMMEDIATE previous row, nearest by x
+    const prev=nb.filter(x=>rowOf(x)===myRow-1).sort((a,b)=>Math.abs(a.x+a.w/2-cx0)-Math.abs(b.x+b.w/2-cx0));
+    const any=nb.sort((a,b)=>Math.abs(a.x+a.w/2-cx0)-Math.abs(b.x+b.w/2-cx0));
     let parentId=null;
-    for(const c of nb){if(rec[c.id]){parentId=rec[c.id];break;}}
+    if(prev.length)parentId=rec[prev[0].id];
+    else if(any.length)parentId=rec[any[0].id];
     if(!parentId&&myRow>0){
       const cx=u.x+u.w/2;
-      const prev=units.filter(v=>v.id!==u.id&&rowOf(v)===myRow-1);
-      prev.sort((a,b)=>Math.abs(a.x+a.w/2-cx)-Math.abs(b.x+b.w/2-cx));
-      if(prev.length&&rec[prev[0].id])parentId=rec[prev[0].id];
+      const prev2=units.filter(v=>v.id!==u.id&&rowOf(v)===myRow-1&&rec[v.id]);
+      prev2.sort((a,b)=>Math.abs(a.x+a.w/2-cx)-Math.abs(b.x+b.w/2-cx));
+      if(prev2.length)parentId=rec[prev2[0].id];
     }
     if(!parentId)parentId=rootId0;
     // --- record ---
