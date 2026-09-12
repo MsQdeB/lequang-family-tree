@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gia phả Lê Quang</title>
+<style>
+  :root{
+    --bg:#faf6ef; --card:#fff; --ink:#2b2b2b; --muted:#7a7a7a;
+    --male-bg:#e8f0fe; --male-bd:#4a6fa5; --male-tx:#1d3f6e;
+    --female-bg:#fdeef0; --female-bd:#c96b7e; --female-tx:#8c2f44;
+    --accent:#0f8b8d; --hi:#ffe28a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,#0f8b8d,#143642);color:#fff;padding:20px 24px 14px}
+  header h1{margin:0 0 4px;font-size:26px;letter-spacing:.5px}
+  header .sub{opacity:.85;font-size:14px}
+  .toolbar{max-width:1100px;margin:0 auto;padding:16px 24px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #search{flex:1;min-width:240px;padding:12px 16px;font-size:17px;border:2px solid var(--accent);border-radius:10px;outline:none}
+  #search:focus{box-shadow:0 0 0 3px rgba(15,139,141,.25)}
+  select{padding:11px 10px;font-size:15px;border:1px solid #ccc;border-radius:10px;background:#fff}
+  .stats{font-size:13px;color:var(--muted)}
+  main{max-width:1100px;margin:0 auto;padding:16px 24px 60px}
+  #results{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:10px}
+  .pcard{background:var(--card);border:1px solid #e5ddcf;border-left:6px solid var(--accent);border-radius:10px;padding:10px 12px;cursor:pointer;transition:transform .1s, box-shadow .1s}
+  .pcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+  .pcard .nm{font-weight:700;font-size:15px}
+  .pcard .meta{font-size:12px;color:var(--muted);margin-top:3px}
+  .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;margin-right:4px}
+  .b-m{background:var(--male-bg);color:var(--male-tx);border:1px solid var(--male-bd)}
+  .b-f{background:var(--female-bg);color:var(--female-tx);border:1px solid var(--female-bd)}
+  .b-chi{background:#fff3d6;color:#8a6d00;border:1px solid #e0c060}
+  .b-gen{background:#eef7f7;color:var(--accent);border:1px solid #bfe0e0}
+  mark{background:var(--hi);padding:0 1px;border-radius:2px}
+  /* tree */
+  .tree ul{list-style:none;margin:0;padding-left:26px;border-left:2px dotted #cdbfa5}
+  .tree>ul{border-left:none;padding-left:0}
+  .tree li{margin:2px 0}
+  .node{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .tw{cursor:pointer;user-select:none;width:18px;height:18px;line-height:16px;text-align:center;border:1px solid #bbb;border-radius:4px;background:#fff;font-size:12px;color:#666}
+  .tw:hover{background:#eee}
+  .pname{cursor:pointer;padding:3px 9px;border-radius:7px;font-weight:600;font-size:14px;border:1px solid transparent}
+  .pname.m{background:var(--male-bg);color:var(--male-tx);border-color:var(--male-bd)}
+  .pname.f{background:var(--female-bg);color:var(--female-tx);border-color:var(--female-bd)}
+  .pname:hover{filter:brightness(.96)}
+  .pname.sel{outline:3px solid #f2a71b;background:var(--hi)}
+  .palias{font-size:12px;color:var(--muted);font-weight:400}
+  .hidden{display:none}
+  .panel{background:var(--card);border:1px solid #e5ddcf;border-radius:12px;padding:16px 18px;margin-top:14px;display:none}
+  .panel.open{display:block}
+  .panel h2{margin:0 0 8px;font-size:20px;color:#143642}
+  .panel .row{margin:5px 0;font-size:14.5px}
+  .panel .lbl{color:var(--muted);font-weight:600;display:inline-block;min-width:110px}
+  .link{color:var(--accent);cursor:pointer;text-decoration:underline}
+  .note{font-size:13px;color:#9a6a00;background:#fff8e1;border:1px solid #f0dfa8;border-radius:8px;padding:8px 10px;margin-top:10px}
+  footer{max-width:1100px;margin:0 auto;padding:0 24px 40px;color:var(--muted);font-size:12.5px}
+  .sec-title{font-size:18px;font-weight:700;color:#143642;margin:22px 0 6px}
+  .tabs{display:flex;gap:8px;margin:22px 0 6px;align-items:center}
+  .tab{padding:8px 18px;border-radius:10px 10px 0 0;border:1px solid #e5ddcf;border-bottom:none;background:#f0e9dc;cursor:pointer;font-weight:700;color:#6b6255;font-size:15px}
+  .tab.active{background:var(--card);color:#143642;border-bottom:2px solid var(--card)}
+  .tbtn{margin-left:auto;font-size:13px;padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;color:#444}
+  .tbtn:hover{background:#f3ede2}
+  #directory{display:none}
+  table.dir{width:100%;border-collapse:collapse;background:var(--card);border:1px solid #e5ddcf;border-radius:12px;overflow:hidden;font-size:14px}
+  table.dir th{background:#143642;color:#fff;padding:9px 10px;text-align:left;font-weight:600}
+  table.dir td{padding:8px 10px;border-top:1px solid #efe8da;vertical-align:top}
+  table.dir tr:hover td{background:#fdf9f0}
+  .pname.cname{cursor:pointer}
+  .whatsapp{color:#128c4b;text-decoration:none;font-weight:600}
+  .nocontact{color:#c2a94e;font-style:italic;font-size:12.5px}
+  .suggest-btn{font-size:12px;padding:3px 10px;border:1px solid var(--accent);border-radius:8px;background:#eef7f7;color:var(--accent);cursor:pointer;margin-left:8px}
+  .suggest-btn:hover{background:#dff0f0}
+  .modal-bg{position:fixed;inset:0;background:rgba(20,30,40,.55);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:20px 24px}
+  .modal h3{margin:0 0 6px;color:#143642}
+  .modal textarea{width:100%;min-height:150px;font-family:inherit;font-size:14px;padding:10px;border:1px solid #ccc;border-radius:8px;margin:8px 0}
+  .modal .cur{background:#f7f4ec;border:1px solid #e5ddcf;border-radius:8px;padding:10px 12px;font-size:13px;margin:8px 0}
+  .modal .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .btn{padding:9px 16px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:#eee;color:#444}
+  details.guide{background:var(--card);border:1px solid #e5ddcf;border-radius:12px;padding:12px 18px;margin-top:18px;font-size:14px}
+  details.guide summary{font-weight:700;color:#143642;cursor:pointer;font-size:15px}
+  details.guide li{margin:4px 0}
+  .copied{color:#128c4b;font-weight:600;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏡 GIA PHẢ LÊ QUANG</h1>
+  <div class="sub">Từ Ông LÊ QUANG ĐẠI (đời 1) — tìm kiếm nhanh theo tên, tên húy, tên gọi</div>
+</header>
+
+<div class="toolbar">
+  <input id="search" type="text" placeholder="🔎 Nhập tên… (VD: Tiến, Sáu Lý, Hưng — không cần dấu)">
+  <select id="fGen"><option value="">— mọi đời —</option></select>
+  <select id="fChi"><option value="">— mọi chi —</option></select>
+  <span class="stats" id="stats"></span>
+</div>
+
+<main>
+  <div id="results"></div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabTree" onclick="switchView('tree')">🌳 Cây gia phả</div>
+    <div class="tab" id="tabDir" onclick="switchView('dir')">📇 Danh bạ liên hệ</div>
+    <button class="tbtn" id="btnExpand" onclick="setAll(true)">⤢ Mở rộng tất cả</button>
+    <button class="tbtn" onclick="setAll(false)">⤡ Thu gọn</button>
+    <button class="tbtn" style="background:#fff3d6;border-color:#e0c060;color:#8a6d00" onclick="suggest()">✏️ Đề xuất sửa / thêm người</button>
+  </div>
+  <div id="treeWrap">
+    <div class="tree" id="tree"></div>
+  </div>
+  <div id="directory"></div>
+
+  <div class="panel" id="detail"></div>
+
+  <details class="guide">
+    <summary>📋 Danh mục thông tin cần thu thập cho từng người</summary>
+    <ul>
+      <li><b>Họ tên đầy đủ</b> + tên húy + tên gọi ở nhà (VD: “Sáu Lý”)</li>
+      <li><b>Năm sinh / năm mất</b> (và nơi ở nếu biết)</li>
+      <li><b>Quê quán / địa chỉ hiện nay</b></li>
+      <li><b>Vợ/chồng</b> (tên khai sinh + quê quán + năm sinh)</li>
+      <li><b>Con cái</b> — kể cả con gái (tên + năm sinh + thứ tự)</li>
+      <li><b>Nghề nghiệp</b>, chức tước thời xưa (VD: “sinh đồ”, “Cử nhân”)</li>
+      <li><b>Số điện thoại / email</b> (chỉ đời gần — đời 11 trở xuống nên cân nhắc)</li>
+      <li><b>Nơi chôn cất / nơi thờ tự</b> (nếu đã mất)</li>
+      <li><b>Chuyện kể, thành tựu</b> đáng nhớ (1–3 câu)</li>
+      <li><b>Ảnh</b> (nếu muốn, gửi kèm khi góp ý)</li>
+    </ul>
+    <p style="color:var(--muted);font-size:13px">Mẹo: điền vào bản in cây gia phả khi gặp gỡ, rồi gửi một lần qua nút “Đề xuất sửa”.</p>
+  </details>
+
+  <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modalBox"></div>
+  </div>
+</main>
+
+<footer>
+  Dữ liệu trích từ sơ đồ drawio "2026 LQ Đại". Các quan hệ ghi "cần xác nhận" là suy đoán từ bố cục sơ đồ —
+  xin gia đình rà soát. Sửa dữ liệu trong file <b>data.js</b>.
+</footer>
+
+<script src="data.js"></script>
+<script>
+const norm = s => (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+                  .replace(/đ/gi,"d").toLowerCase();
+const byId = {}; PEOPLE.forEach(p=>byId[p.id]=p);
+const childrenOf = {}; PEOPLE.forEach(p=>{
+  (p.parents||[]).forEach(pid=>{
+    if(byId[pid]){ (childrenOf[pid]=childrenOf[pid]||[]).push(p); }
+  });
+});
+Object.values(childrenOf).forEach(a=>a.sort((x,y)=>(x.gen-y.gen)||(x.name>y.name?1:-1)));
+
+function spousesOf(p){
+  const set=new Set(p.spouses||[]);
+  PEOPLE.forEach(q=>{ if((q.spouses||[]).includes(p.id)) set.add(q.id); });
+  return [...set].filter(id=>byId[id]).map(id=>byId[id]);
+}
+
+// --- filters UI ---
+const gens=[...new Set(PEOPLE.map(p=>p.gen).filter(Boolean))].sort((a,b)=>a-b);
+const fGen=document.getElementById("fGen");
+gens.forEach(g=>{const o=document.createElement("option");o.value=g;o.textContent="Đời "+g;fGen.appendChild(o);});
+const chis=[...new Set(PEOPLE.map(p=>p.chi).filter(Boolean))].sort((a,b)=>a-b);
+const fChi=document.getElementById("fChi");
+chis.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent="Chi "+c;fChi.appendChild(o);});
+
+// --- highlight ---
+function hl(text,q){
+  if(!q) return text;
+  const n=norm(text), nq=norm(q); let out="", i=0;
+  while(i<text.length){
+    const idx=n.indexOf(nq,i);
+    if(idx===-1||!nq){out+=text.slice(i);break;}
+    out+=text.slice(i,idx)+"<mark>"+text.slice(idx,idx+nq.length)+"</mark>";
+    i=idx+nq.length;
+  }
+  return out;
+}
+
+// --- search ---
+const searchEl=document.getElementById("search"), resultsEl=document.getElementById("results");
+const statsEl=document.getElementById("stats"), detailEl=document.getElementById("detail");
+function stats(){
+  const m=PEOPLE.filter(p=>p.g==="m").length, f=PEOPLE.length-m;
+  statsEl.textContent=`${PEOPLE.length} người (${m} nam · ${f} nữ)`;
+}
+stats();
+
+function renderResults(q){
+  q=q.trim();
+  const g=fGen.value, c=fChi.value;
+  let list=PEOPLE;
+  if(g) list=list.filter(p=>p.gen==g);
+  if(c) list=list.filter(p=>p.chi==c || (p.spouses||[]).some(sid=>byId[sid]&&byId[sid].chi==c));
+  if(q){
+    const nq=norm(q);
+    list=list.filter(p=>{
+      const hay=norm([p.name,p.alias,p.years,p.phone,p.address,p.email,p.note,p.gen?("đời "+p.gen):"",p.chi?("chi "+p.chi):""].join(" "));
+      return nq.split(/\s+/).every(t=>hay.includes(t));
+    });
+    list.sort((a,b)=>(a.gen||99)-(b.gen||99));
+  }
+  resultsEl.innerHTML = list.length? "" :
+    '<div style="color:var(--muted);padding:8px">Không tìm thấy ai. Thử ít từ khoá hơn hoặc bỏ dấu.</div>';
+  const frag=document.createDocumentFragment();
+  list.slice(0,80).forEach(p=>{
+    const d=document.createElement("div"); d.className="pcard";
+    d.innerHTML=`<div class="nm">${hl(p.name,q)}</div>
+      <div class="meta">${p.alias?hl("« "+p.alias+" »",q)+" · ":""}Đời ${p.gen||"?"}${p.chi?" · CHI "+p.chi:""}${p.years?" · "+p.years:""}</div>`;
+    d.onclick=()=>show(p.id,true);
+    frag.appendChild(d);
+  });
+  resultsEl.appendChild(frag);
+}
+let deb;
+searchEl.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(()=>renderResults(searchEl.value),120);});
+fGen.onchange=fChi.onchange=()=>renderResults(searchEl.value);
+
+// --- tree ---
+const openSet=new Set(["dai","mau","ve","vanluong","quyt","so","chuc","toan","u","hao","tho6","xuan","qua","ngoan","tien","thong","tho","tienhoc"]);
+const allParentIds=PEOPLE.filter(p=>(p.parents||[]).length&&(p.gen||0)<=13).map(p=>p.parents[0]);
+function setAll(open){
+  if(open) allParentIds.forEach(id=>openSet.add(id)); else openSet.clear();
+  renderTree(searchEl.value);
+}
+function switchView(v){
+  document.getElementById('tabTree').classList.toggle('active',v==='tree');
+  document.getElementById('tabDir').classList.toggle('active',v==='dir');
+  document.getElementById('treeWrap').style.display=v==='tree'?'':'none';
+  document.getElementById('directory').style.display=v==='dir'?'':'none';
+  if(v==='dir') renderDir();
+}
+window.switchView=switchView;window.setAll=setAll;
+function nodeEl(p,q){
+  const li=document.createElement("li");
+  const row=document.createElement("div"); row.className="node";
+  const kids=childrenOf[p.id]||[];
+  if(kids.length){
+    const tw=document.createElement("span"); tw.className="tw";
+    tw.textContent=openSet.has(p.id)?"−":"+";
+    tw.onclick=()=>{
+      const ul=row.nextElementSibling;
+      const hidden=ul.classList.toggle("hidden");
+      tw.textContent=hidden?"+":"−";
+      hidden?openSet.delete(p.id):openSet.add(p.id);
+    };
+    row.appendChild(tw);
+  } else {
+    const sp=document.createElement("span"); sp.style.width="18px"; row.appendChild(sp);
+  }
+  const name=document.createElement("span");
+  name.className="pname "+(p.g==="f"?"f":"m");
+  name.dataset.pid=p.id;
+  name.innerHTML=hl(p.name,q)+(p.alias?` <span class="palias">(${hl(p.alias,q)})</span>`:"")+(p.chi?` <span class="badge b-chi">CHI ${p.chi}</span>`:"")+(p.years?` <span class="palias">${p.years}</span>`:"");
+  name.onclick=()=>show(p.id,true);
+  row.appendChild(name);
+  // spouses inline
+  spousesOf(p).filter(s=>!s.parents||!kids.some(k=>(s.parents||[]).includes(k.id))) // don't duplicate in-law listed as parent
+    .forEach(s=>{
+      const sp=document.createElement("span");
+      sp.className="pname "+(s.g==="f"?"f":"m"); sp.dataset.pid=s.id;
+      sp.innerHTML="⚭ "+hl(s.name,q)+(s.alias?` <span class="palias">(${s.alias})</span>`:"");
+      sp.onclick=()=>show(s.id,true);
+      row.appendChild(sp);
+    });
+  li.appendChild(row);
+  if(kids.length){
+    const ul=document.createElement("ul");
+    if(!openSet.has(p.id)) ul.classList.add("hidden");
+    kids.forEach(k=>ul.appendChild(nodeEl(k,q)));
+    li.appendChild(ul);
+  }
+  return li;
+}
+function renderTree(q){
+  const t=document.getElementById("tree"); t.innerHTML="";
+  const roots=PEOPLE.filter(p=>!p.parents||!p.parents.some(id=>byId[id]));
+  roots.sort((a,b)=>(a.gen||0)-(b.gen||0));
+  const ul=document.createElement("ul");
+  roots.forEach(r=>ul.appendChild(nodeEl(r,q)));
+  t.appendChild(ul);
+}
+
+// --- directory (danh bạ) ---
+function contactLine(p){
+  const parts=[];
+  if(p.phone) parts.push(`📞 <a class="whatsapp" href="tel:${p.phone.replace(/\s/g,'')}">${p.phone}</a>`);
+  if(p.email) parts.push(`✉️ <a href="mailto:${p.email}">${p.email}</a>`);
+  if(p.address) parts.push(`🏠 ${p.address}`);
+  return parts.join('<br>');
+}
+function renderDir(){
+  const q=norm(searchEl.value.trim());
+  let list=PEOPLE.slice();
+  if(q) list=list.filter(p=>norm([p.name,p.alias,p.phone,p.address,p.email].join(" ")).includes(q));
+  list.sort((a,b)=>(a.gen||99)-(b.gen||99)||a.name.localeCompare(b.name));
+  const withC=list.filter(p=>p.phone||p.email||p.address).length;
+  let html=`<p style="font-size:13px;color:var(--muted);margin:4px 0 10px">
+    Tìm theo tên <b>hoặc</b> số điện thoại / địa chỉ. Hiện có <b>${withC}/${list.length}</b> người có thông tin liên hệ —
+    hãy bổ sung trong file <b>data.js</b> (trường <code>phone</code>, <code>address</code>, <code>email</code>).</p>`;
+  html+='<table class="dir"><tr><th style="width:26%">Tên</th><th style="width:8%">Đời</th><th>Liên hệ</th></tr>';
+  list.forEach(p=>{
+    const c=contactLine(p);
+    html+=`<tr><td><span class="link" onclick="show('${p.id}',true)">${p.name}${p.alias?` <span class="palias">(${p.alias})</span>`:""}</span></td>
+      <td>${p.gen||""}</td><td>${c||'<span class="nocontact">chưa có — cần bổ sung</span>'}</td></tr>`;
+  });
+  html+='</table>';
+  document.getElementById('directory').innerHTML=html;
+}
+
+// --- suggestion system ---
+const CONFIG={
+  // Email nhận góp ý của gia đình — THAY ĐỔI EMAIL NÀY
+  email:"ten-cua-ban@gmail.com",
+  // (Tuỳ chọn) link Google Form nếu dùng form thay email
+  formUrl:""
+};
+function personSummary(p){
+  return `• Tên: ${p.name}${p.alias?` (${p.alias})`:""}\n• Đời: ${p.gen||"?"}${p.chi?` — CHI ${p.chi}`:""}\n• Cha mẹ: ${(p.parents||[]).map(i=>byId[i]&&byId[i].name).filter(Boolean).join(", ")||"?"}\n• Vợ/chồng: ${spousesOf(p).map(s=>s.name).join(", ")||"?"}\n• Con: ${(childrenOf[p.id]||[]).map(c=>c.name).join(", ")||"?"}`;
+}
+function suggest(pid){
+  const p=pid?byId[pid]:null;
+  sugId=pid||null;
+  const box=document.getElementById('modalBox');
+  box.innerHTML=`
+    <h3>✏️ Đề xuất sửa / bổ sung</h3>
+    ${p?`<div class="cur"><b>Thông tin hiện tại của ${p.name}:</b><br><pre style="margin:4px 0;white-space:pre-wrap;font-family:inherit">${personSummary(p)}</pre></div>`
+      :`<div class="cur">Đề xuất <b>thêm người mới</b> hoặc sửa chung. Nếu sửa một người cụ thể, hãy mở trang người đó rồi bấm nút “Đề xuất sửa” cạnh tên.</div>`}
+    <textarea id="sugText" placeholder="${p?`Ví dụ: ${p.name} sinh năm 1940, mất 2005. Vợ là Nguyễn Thị A (1945–2020), quê Hà Nội. Có 4 con: ...`
+      :'Ví dụ: Thêm con của LÊ QUANG CÂU: Lê Quang Hùng, sinh 1955...'}"></textarea>
+    <div class="actions">
+      ${CONFIG.email?`<button class="btn primary" onclick="sendSug(${p?`'${p.id}'`:"null"})">✉️ Gửi qua email</button>`:""}
+      <button class="btn ghost" onclick="copySug()">📋 Copy nội dung</button>
+      ${CONFIG.formUrl?`<a class="btn primary" style="text-decoration:none" href="${CONFIG.formUrl}" target="_blank">Mở Google Form</a>`:""}
+      <button class="btn ghost" onclick="closeModal()">Đóng</button>
+    </div>
+    <span class="copied" id="copiedMsg"></span>`;
+  document.getElementById('modalBg').classList.add('open');
+}
+function sugBody(p){
+  return (p?`[GIA PHẢ LÊ QUANG] Sửa: ${p.name} (${p.id})\n\nTHÔNG TIN HIỆN TẠI:\n${personSummary(p)}\n\nĐỀ XUẤT SỬA / BỔ SUNG:\n`
+    :`[GIA PHẢ LÊ QUANG] Góp ý / thêm người mới\n\n`)+document.getElementById('sugText').value;
+}
+function sendSug(pid){
+  const p=pid?byId[pid]:null;
+  const subject=encodeURIComponent(p?`Gia phả LQ — sửa: ${p.name}`:"Gia phả LQ — góp ý mới");
+  location.href=`mailto:${CONFIG.email}?subject=${subject}&body=${encodeURIComponent(sugBody(p))}`;
+}
+function copySug(){
+  const p=sugId?byId[sugId]:null;
+  navigator.clipboard.writeText(sugBody(p)).then(
+    ()=>{document.getElementById('copiedMsg').textContent=' ✓ Đã copy — dán vào Zalo/Messenger gửi cho quản trị viên';},
+    ()=>{document.getElementById('copiedMsg').textContent=' (Không copy được — hãy chụp màn hình)';}
+  );
+}
+let sugId=null;
+function closeModal(){document.getElementById('modalBg').classList.remove('open');}
+window.suggest=suggest;window.sendSug=sendSug;window.copySug=copySug;window.closeModal=closeModal;
+
+// --- detail panel ---
+function chip(p){
+  const s=document.createElement("span");
+  s.className="link"; s.textContent=p.name+(p.gen?` (đời ${p.gen})`:"");
+  s.onclick=()=>show(p.id,true);
+  return s;
+}
+function show(id,scroll){
+  const p=byId[id]; if(!p) return;
+  document.querySelectorAll(".pname.sel").forEach(e=>e.classList.remove("sel"));
+  document.querySelectorAll(`.pname[data-pid="${id}"]`).forEach(e=>e.classList.add("sel"));
+  const pa=(p.parents||[]).map(i=>byId[i]).filter(Boolean);
+  const sp=spousesOf(p), ch=childrenOf[p.id]||[];
+  const row=(lbl,vals)=>{
+    if(!vals.length) return "";
+    return `<div class="row"><span class="lbl">${lbl}:</span>${vals.map(v=>`<span class="link" onclick="show('${v.id}',true)">${v.name}${v.gen?" (đời "+v.gen+")":""}</span>`).join(" · ")}</div>`;
+  };
+  detailEl.innerHTML=`
+    <h2>${p.name} ${p.alias?`<span style="font-weight:400;font-size:15px;color:var(--muted)">« ${p.alias} »</span>`:""}</h2>
+    <div class="row"><span class="lbl">Giới tính:</span>${p.g==="f"?"Nữ":"Nam"}</div>
+    ${p.gen?`<div class="row"><span class="lbl">Đời thứ:</span>${p.gen}</div>`:""}
+    ${p.chi?`<div class="row"><span class="lbl">Chi:</span>CHI ${p.chi} (thủ chi)</div>`:""}
+    ${p.years?`<div class="row"><span class="lbl">Năm:</span>${p.years}</div>`:""}
+    ${(p.phone||p.email||p.address)?`<div class="row"><span class="lbl">Liên hệ:</span>${contactLine(p)}</div>`:""}
+    ${row("Cha mẹ",pa)}
+    ${row("Vợ/Chồng",sp)}
+    ${row("Con",ch)}
+    ${p.note?`<div class="note">⚠️ ${p.note}</div>`:""}
+    <div class="row" style="margin-top:8px"><button class="suggest-btn" onclick="sugId='${p.id}';suggest('${p.id}')">✏️ Đề xuất sửa người này</button></div>
+    <div class="row" style="margin-top:8px"><span class="lbl">Liên kết:</span><input style="flex:1;font-size:12px" readonly value="${location.origin+location.pathname}#p=${p.id}" onclick="this.select()"></div>`;
+  detailEl.classList.add("open");
+  history.replaceState(null,"","#p="+id);
+  if(scroll) detailEl.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+window.show=show;
+
+// --- init ---
+renderTree("");
+renderResults("");
+const initId=(location.hash.match(/p=([\w-]+)/)||[])[1];
+if(initId) show(initId,false);
+</script>
+</body>
+</html>
