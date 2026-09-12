@@ -223,7 +223,7 @@ searchEl.addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(()=>rend
 fGen.onchange=fChi.onchange=()=>renderResults(searchEl.value);
 
 // --- tree ---
-const openSet=new Set(["dai","mau","ve","vanluong","quyt","so","chuc","toan","u","hao","tho6","xuan","qua","ngoan","tien","thong","tho","tienhoc"]);
+const openSet=new Set(["dai","mau","ve","vanluong","quyt","so","chuc","toan","u","hao","tho6","xuan","qua","ngoan","tien","thong","tho","tienhoc","tan","nhi","tam"]);
 const allParentIds=PEOPLE.filter(p=>(p.parents||[]).length&&(p.gen||0)<=13).map(p=>p.parents[0]);
 function setAll(open){
   if(open) allParentIds.forEach(id=>openSet.add(id)); else openSet.clear();
@@ -372,6 +372,15 @@ function chip(p){
 }
 function show(id,scroll){
   const p=byId[id]; if(!p) return;
+  // b) auto-expand the ancestor chain so this person's branch is visible
+  let expanded=false, cur=id;
+  while(cur){
+    const pp=byId[cur]; const par=(pp&&pp.parents||[])[0];
+    if(!par) break;
+    if(!openSet.has(par)){openSet.add(par); expanded=true;}
+    cur=par;
+  }
+  if(expanded) renderTree(searchEl.value);
   document.querySelectorAll(".pname.sel").forEach(e=>e.classList.remove("sel"));
   document.querySelectorAll(`.pname[data-pid="${id}"]`).forEach(e=>e.classList.add("sel"));
   const pa=(p.parents||[]).map(i=>byId[i]).filter(Boolean);
@@ -395,6 +404,10 @@ function show(id,scroll){
     <div class="row" style="margin-top:8px"><span class="lbl">Liên kết:</span><input style="flex:1;font-size:12px" readonly value="${location.origin+location.pathname}#p=${p.id}" onclick="this.select()"></div>`;
   detailEl.classList.add("open");
   history.replaceState(null,"","#p="+id);
+  if(expanded&&scroll){
+    const node=document.querySelector(`.pname[data-pid="${id}"]`);
+    if(node) node.scrollIntoView({behavior:"smooth",block:"center"});
+  }
   if(scroll) detailEl.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 window.show=show;
